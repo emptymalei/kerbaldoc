@@ -1,0 +1,527 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>KSP Launch Window Planner by alexmoon</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="stylesheets/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="stylesheets/bootstrap-theme.min.css" rel="stylesheet" media="screen">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+      
+    <script src="javascripts/jquery-2.0.0.min.js" type="text/javascript"></script>
+    <script src="javascripts/numeric-1.2.6.min.js" type="text/javascript"></script>
+    <script src="javascripts/quaternion.js" type="text/javascript"></script>
+    <script src="javascripts/roots.js" type="text/javascript"></script>
+    <script src="javascripts/lambert.js" type="text/javascript"></script>
+    <script src="javascripts/orbit.js" type="text/javascript"></script>
+    <script src="javascripts/celestialbodies.js" type="text/javascript"></script>
+    <script src="javascripts/kerbaltime.js" type="text/javascript"></script>
+    <script src="javascripts/celestialbodyform.js" type="text/javascript"></script>
+    <script src="javascripts/missionform.js" type="text/javascript"></script>
+    <script src="javascripts/porkchopplot.js" type="text/javascript"></script>
+    <script src="javascripts/porkchop.js" type="text/javascript"></script>
+    <script src="javascripts/bootstrap.min.js" type="text/javascript"></script>
+    
+    <style type="text/css">
+      dd, dt {
+        margin-bottom: 5px;
+      }
+      
+      input {
+        text-align: right;
+      }
+      
+      #bodyName {
+        text-align: left;
+      }
+      
+      .popover-content dl {
+        margin-bottom: 0;
+      }
+      
+      .popover-content dt {
+        width: 100px;
+        margin-bottom: 0;
+        font-weight: normal;
+        font-style: italic;
+      }
+      
+      .popover-content dd {
+        margin-left: 120px;
+        margin-bottom: 0;
+      }
+      
+      .form-horizontal .form-inline .form-group {
+          margin-left: 0;
+          margin-right: 0;
+      }
+      
+      @media screen and (min-width: 768px) {
+        .form-inline select {
+          min-width: 12em;
+        }
+      }
+      
+      @media screen and (min-width: 992px) {
+        .form-inline select {
+          min-width: 9em;
+        }
+      }
+      
+      @media screen and (min-width: 1200px) {
+        .form-inline select {
+          min-width: 14.5em;
+        }
+      }
+      
+      @media screen and (min-width: 768px) and (max-width: 992px) {
+          .hidden-sm-inline {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+          }
+      }
+      
+      a[rel="license"] img { float: right; }
+      
+      .grabbing {
+        cursor: move !important;
+        cursor: -moz-grabbing !important;
+        cursor: -webkit-grabbing !important;
+        cursor: grabbing !important;
+      }
+      
+      #porkchopProgress {
+        background-color: rgba(255, 255, 255, 0.5);
+        padding: 5px;
+        border-radius: 5px;
+      }
+      
+      .radio:last-child {
+        padding-bottom: 7px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="page-header">
+        <h1>Launch Window Planner <small>for Kerbal Space Program</small></h1>
+      </header>
+      <section>
+        <div class="row">
+          <div class="col-sm-7 col-md-7 col-lg-7">
+            <h4>Mission parameters</h4>
+            <form class="form-horizontal" id="porkchopForm">
+              <fieldset>
+                <div class="form-group">
+                  <label class="col-sm-4 col-md-4 control-label" for="originSelect">Date format</label>
+                  <div class="col-sm-8 col-md-8">
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="dateFormat" id="kerbinTime" value="kerbin" checked>
+                        Kerbin Time (6h days, 426d years)
+                      </label>
+                    </div>
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="dateFormat" id="earthTime" value="earth">
+                        Earth Time (24h days, 365d years)
+                      </label>
+                    </div>
+                  </div>
+                <div class="form-group">
+                  <label class="col-sm-4 col-md-4 control-label" for="originSelect">Origin</label>
+                  <div class="col-sm-8 col-md-8">
+                    <div class="form-inline">
+                      <div class="form-group">
+                        <select id="originSelect" class="form-control">
+                        </select>
+                      </div>
+                      <div class="btn-group pull-right">
+                        <button id="originEditBtn" type="button" class="btn btn-default">
+                          <span class="glyphicon glyphicon-edit"></span>
+                          <span class="hidden-sm-inline">Edit orbit</span>
+                        </button>
+                        <button id="originAddBtn" type="button" class="btn btn-default">
+                          <span class="glyphicon glyphicon-plus"></span>
+                          <span class="hidden-sm-inline">Add body</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 col-md-4 control-label" for="initialOrbit">Initial orbit</label>
+                  <div class="col-sm-8 col-md-8">
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="initialOrbit" value="100">
+                      <span class="altitude input-group-addon" data-toggle="tooltip" data-placement="right" title="Above mean surface level">km</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 col-md-4 control-label" for="destinationSelect">Destination</label>
+                  <div class="col-sm-8 col-md-8">
+                    <div class="form-inline">
+                      <div class="form-group">
+                        <select id="destinationSelect" class="form-control" disabled>
+                        </select>
+                      </div>
+                      <div class="btn-group pull-right">
+                        <button id="destinationEditBtn" type="button" class="btn btn-default">
+                          <span class="glyphicon glyphicon-edit"></span>
+                          <span class="hidden-sm-inline">Edit orbit</span>
+                        </button>
+                        <button id="destinationAddBtn" type="button" class="btn btn-default">
+                          <span class="glyphicon glyphicon-plus"></span>
+                          <span class="hidden-sm-inline">Add body</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 col-md-4 control-label" for="finalOrbit">Final orbit</label>
+                  <div class="col-sm-8 col-md-8">
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="finalOrbit" value="100">
+                      <span class="altitude input-group-addon" data-toggle="tooltip" data-placement="right" title="Above mean surface level">km</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="col-sm-offset-4 col-md-offset-4 col-sm-8 col-md-8">
+                    <div class="checkbox">
+                      <label for="noInsertionBurnCheckbox">
+                        <input type="checkbox" id="noInsertionBurnCheckbox">
+                        No insertion burn (e.g. aerocapture or fly-by)
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 col-md-4 control-label" for="earliestDepartureYear">Earliest departure</label>
+                  <div class="col-sm-8 col-md-8">
+                    <div class="input-group">
+                      <span class="input-group-addon">Year</span>
+                      <input type="number" class="form-control" id="earliestDepartureYear" value="1" min="1" step="any">
+                      <span class="input-group-addon">day</span>
+                      <input type="number" class="form-control" id="earliestDepartureDay" value="1" min="1" step="any">
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 col-md-4 control-label" for="transferTypeSelect">Transfer type</label>
+                  <div class="col-sm-8 col-md-8">
+                    <select id="transferTypeSelect" class="form-control">
+    									<option value="ballistic" selected>Ballistic</option>
+    									<option value="optimalPlaneChange">Mid-course plane change</option>
+    									<option value="optimal">Optimal</option>
+                    </select>
+                  </div>
+                </div>
+              </fieldset>
+              <div class="form-group">
+                <a id="showAdvancedControls" class="col-sm-offset-4 col-md-offset-4 col-sm-8 col-md-8">Show advanced settings...</a>
+              </div>
+              <fieldset id="advancedControls" style="display: none">
+                <div class="form-group">
+                  <label class="col-sm-4 col-md-4 control-label" for="latestDepartureYear">Latest departure</label>
+                  <div class="col-sm-8 col-md-8">
+                    <div class="input-group">
+                      <span class="input-group-addon">Year</span>
+                      <input type="number" class="form-control" id="latestDepartureYear" value="1" min="1" step="any">
+                      <span class="input-group-addon">day</span>
+                      <input type="number" class="form-control" id="latestDepartureDay" value="1" min="1" step="any">
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 col-md-4 control-label" for="shortestTimeOfFlight">Time of flight</label>
+                  <div class="col-sm-8 col-md-8">
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="shortestTimeOfFlight" value="1">
+                      <span class="input-group-addon">to</span>
+                      <input type="text" class="form-control" id="longestTimeOfFlight" value="1">
+                      <span class="input-group-addon">days</span>
+                    </div>
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset>
+                <div class="form-group">
+                  <div class="col-sm-offset-4 col-md-offset-4 col-sm-8 col-md-8">
+                    <button type="submit" id="porkchopSubmit" class="btn btn-primary">
+                      <span class="glyphicon glyphicon-circle-arrow-down"></span>
+                      Plot it!
+                    </button>
+                    <button type="reset" id="reset" class="btn btn-default">
+                      <span class="glyphicon glyphicon-repeat"></span>
+                      Reset
+                    </button>
+                  </div>
+                </div>
+              </fieldset>
+            </form>
+          </div>
+          <div class="col-sm-5 col-md-5 col-lg-5">
+            <h4>Basic instructions</h4>
+            <ol>
+              <li>Select the celestial body you will be departing from.</li>
+              <li>Enter the altitude of your parking orbit around that body. This is assumed to be a circular, equatorial orbit.</li>
+              <li>Select the celestial body you wish to travel to.</li>
+              <li>Enter the altitude of the orbit you wish to establish around your destination body. You may check the "No insertion burn" checkbox instead if you intend to perform a fly-by or aerobraking maneuver.</li>
+              <li>Enter the earliest departure date to include in the plot. Generally this should be your current game time, which you can find in the tracking station in the game.</li>
+              <li>Click the "Plot it!" button. After a few seconds a plot will appear showing how much &#916;v is required to reach your destination for different departure dates and times of flight. Click on any point on this plot to see full details of the selected transfer.</li>
+            </ol>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div class="col-sm-9 col-md-7 col-lg-offset-1 col-lg-6">
+            <h4 style="text-align: center;">Delta-v transfer plot</h4>
+            <div id="porkchopContainer" style="position: relative">
+              <canvas width="540" height="360" id="porkchopCanvas" style="cursor: crosshair"></canvas>
+              <div class="progressContainer" style="position: absolute; top: 100px; left: 80px; width: 280px; display: none">
+                <h5 style="text-align: center">Calculating...</h5>
+                <div class="progress">
+                  <div class="progress-bar" style="width: 0; transition: width 0.1s linear"></div>
+                </div>
+              </div>
+              <button class="zoomInBtn" class="btn btn-default" style="position: absolute; top: 10px; left: 80px; padding: 3px 6px; font-size: 11px" disabled>
+                <span class="glyphicon glyphicon-plus"></span>
+                <span class="sr-only">Zoom in</span>
+              </button>
+              <button class="zoomOutBtn" class="btn btn-default" style="position: absolute; top: 38px; left: 80px; padding: 3px 6px; font-size: 11px" disabled>
+                <span class="glyphicon glyphicon-minus"></span>
+                <span class="sr-only">Zoom out</span>
+              </button>
+            </div>
+          </div>
+          <div id="transferDetails" class="col-sm-12 col-md-5 col-lg-5" style="display: none">
+            <h4>Selected transfer details</h4>
+            <dl class="dl-horizontal">
+              <dt>Departure</dt>
+              <dd><abbr id="departureTime"></abbr></dd>
+              <dt>Arrival</dt>
+              <dd><abbr id="arrivalTime"></abbr></dd>
+              <dt>Time of flight</dt>
+              <dd><abbr id="timeOfFlight"></abbr></dd>
+              <dt>Phase angle</dt>
+              <dd id="phaseAngle"></dd>
+              <dt class="ejectionAngle">Ejection angle</dt>
+              <dd id="ejectionAngle" class="ejectionAngle"></dd>
+              <dt class="ballisticTransfer">Ejection inclination</dt>
+              <dd id="ejectionInclination" class="ballisticTransfer"></dd>
+              <dt>Ejection &#916;v</dt>
+              <dd>
+                <span id="ejectionDeltaV"></span>
+                <a id="ejectionDeltaVInfo" class="glyphicon glyphicon-info-sign" href="#" data-toggle="popover" data-placement="bottom" title="Ejection burn details"></a>
+              </dd>
+              <dt>Transfer periapsis</dt>
+              <dd id="transferPeriapsis"></dd>
+              <dt>Transfer apoapsis</dt>
+              <dd id="transferApoapsis"></dd>
+              <dt class="ballisticTransfer">Transfer inclination</dt>
+              <dd id="transferInclination" class="ballisticTransfer"></dd>
+              <dt>Transfer angle</dt>
+              <dd id="transferAngle"></dd>
+              <dt class="planeChangeTransfer">Plane change time</dt>
+              <dd class="planeChangeTransfer"><abbr id="planeChangeTime"></abbr></dd>
+              <dt class="planeChangeTransfer">Angle to intercept</dt>
+              <dd id="planeChangeAngleToIntercept" class="planeChangeTransfer"></dd>
+              <dt class="planeChangeTransfer">Plane change angle</dt>
+              <dd id="planeChangeAngle" class="planeChangeTransfer"></dd>
+              <dt class="planeChangeTransfer">Plane change &#916;v</dt>
+              <dd class="planeChangeTransfer"><abbr id="planeChangeDeltaV"></abbr></dd>
+              <dt>Insertion inclination</dt>
+              <dd id="insertionInclination"></dd>
+              <dt>Insertion &#916;v</dt>
+              <dd id="insertionDeltaV"></dd>
+              <dt>Total &#916;v</dt>
+              <dd id="totalDeltaV"></dd>
+              <dd>
+                <button id="refineTransferBtn" type="button" class="btn btn-default">
+                  <span class="glyphicon glyphicon-resize-small"></span>
+                  Refine transfer
+                </button>
+              </dd>
+            </dl>
+          </div>
+        </div>
+        <div class="row">
+          <h4>Acknowledgements</h4>
+          <ul>
+            <li>Olex's beautiful <a href="http://ksp.olex.biz">Interactive illustrated interplanetary guide and calculator</a> which inspired me to create this tool as a web page.</li>
+            <li>Robert Braeunig's excellent <a href="http://www.braeunig.us/space/">Rocket and Space Technology</a> which provided most of the math powering these calculations.</li>
+            <li>And of course <a href="https://kerbalspaceprogram.com">Kerbal Space Program</a> for motivating me to finally learn orbital mechanics.</li>
+          </ul>
+        </div>
+      </section>
+      <footer>
+        <a href="https://github.com/alexmoon/ksp"><img style="position: absolute; top: 0; right: 0; border: 0;" src="img/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+        <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/deed.en_US"><img alt="Creative Commons License" style="border-width:0" src="http://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" property="dct:title" rel="dct:type">Launch Window Planner</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="https://github.com/alexmoon/ksp" property="cc:attributionName" rel="cc:attributionURL">Alex Moon</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/deed.en_US">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>. Icons by <a href="http://glyphicons.com/">Glyphicons</a>.
+      </footer>
+    </div>
+    <form id="bodyForm" class="form-horizontal modal fade" tabindex="-1" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+            <h4>New Orbital Body</h4>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="col-sm-5 control-label" for="bodyType">Body type</label>
+              <div class="col-sm-7">
+                <ul id="bodyType" class="nav nav-pills">
+                  <li class="active">
+                    <a href="#planetFields">Planetary body</a>
+                  </li>
+                  <li>
+                    <a href="#vesselFields">Vessel</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-5 control-label" for="bodyName">Name</label>
+              <div class="col-sm-7">
+                <input id="bodyName" class="form-control" type="text">
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-5 control-label" for="referenceBodySelect">Reference body</label>
+              <div class="col-sm-7">
+                <select id="referenceBodySelect" class="form-control">
+									<option>Kerbol</option>
+									<option>Eve</option>
+									<option selected>Kerbin</option>
+									<option>Duna</option>
+                  <option>Jool</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-5 control-label" for="semiMajorAxis">Semi-major axis</label>
+              <div class="col-sm-7">
+                <div class="input-group">
+                  <input type="text" class="form-control" id="semiMajorAxis">
+                  <span class="input-group-addon">km</span>
+                </div>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-5 control-label" for="eccentricity">Eccentricity</label>
+              <div class="col-sm-7">
+                <input type="text" class="form-control" id="eccentricity">
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-5 control-label" for="inclination">Inclination</label>
+              <div class="col-sm-7">
+                <div class="input-group">
+                  <input type="text" class="form-control" id="inclination">
+                  <span class="input-group-addon">&deg;</span>
+                </div>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-5 control-label" for="longitudeOfAscendingNode">Longitude of ascending node</label>
+              <div class="col-sm-7">
+                <div class="input-group">
+                  <input type="text" class="form-control" id="longitudeOfAscendingNode">
+                  <span class="input-group-addon">&deg;</span>
+                </div>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-5 control-label" for="argumentOfPeriapsis">Argument of periapsis</label>
+              <div class="col-sm-7">
+                <div class="input-group">
+                  <input type="text" class="form-control" id="argumentOfPeriapsis">
+                  <span class="input-group-addon">&deg;</span>
+                </div>
+                <span class="help-block"></span>
+              </div>
+            </div>
+            <div class="tab-content">
+              <fieldset id="planetFields" class="tab-pane active">
+                <div class="form-group">
+                  <label class="col-sm-5 control-label" for="meanAnomalyAtEpoch">Mean anomaly at epoch</label>
+                  <div class="col-sm-7">
+                    <input type="text" class="form-control" id="meanAnomalyAtEpoch">
+                    <span class="help-block"></span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-5 control-label" for="planetMass">Mass</label>
+                  <div class="col-sm-7">
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="planetMass">
+                      <span class="input-group-addon">kg</span>
+                    </div>
+                    <span class="help-block"></span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-5 control-label" for="planetRadius">Radius</label>
+                  <div class="col-sm-7">
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="planetRadius">
+                      <span class="input-group-addon">km</span>
+                    </div>
+                    <span class="help-block"></span>
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset id="vesselFields" class="tab-pane">
+                <div class="form-group">
+                  <label class="col-sm-5 control-label" for="timeOfPeriapsisPassage">Time of periapsis passage</label>
+                  <div class="col-sm-7">
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="timeOfPeriapsisPassage" placeholder="year/day hour:min:sec">
+                      <span class="input-group-addon">UT</span>
+                    </div>
+                    <span class="help-block"></span>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">
+              Cancel
+            </button>
+            <button id="bodySaveBtn" type="button" class="btn btn-primary">
+              <span class="glyphicon glyphicon-save"></span>
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </form>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', 'UA-41470020-1', 'alexmoon.github.io');
+      ga('send', 'pageview');
+    </script>
+  </body>
+</html>
